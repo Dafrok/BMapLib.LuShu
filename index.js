@@ -8,11 +8,6 @@
         root.BMapLib.LuShu = root.BMapLib.Lushu || factory();  
     }  
 })(this, function() {
-    try {
-        BMap;
-    } catch (e) {
-        throw Error('Baidu Map JS API is not ready yet!');
-    }
     var baidu = {};
     baidu.dom = {};
     baidu.dom.g = function(id) {
@@ -65,8 +60,6 @@
         return value;
     };
     baidu.string = baidu.string || {};
-
-
     baidu.string.toCamelCase = function(source) {
 
         if (source.indexOf('-') < 0 && source.indexOf('_') < 0) {
@@ -158,6 +151,11 @@
      * @exports LuShu as BMapLib.LuShu
      */
     var LuShu = function(map, path, opts) {
+        try {
+            BMap;
+        } catch (e) {
+            throw Error('Baidu Map JS API is not ready yet!');
+        }
         if (!path || path.length < 1) {
             return;
         }
@@ -241,6 +239,7 @@
         },
         _addInfoWin: function() {
             var me = this;
+            !CustomOverlay.prototype.initialize && initCustomOverlay();
             var overlay = new CustomOverlay(me._marker.getPosition(), me._opts.defaultContent);
             overlay.setRelatedClass(this);
             this._overlay = overlay;
@@ -339,33 +338,37 @@
         this._point = point;
         this._html = html;
     }
-    CustomOverlay.prototype = new BMap.Overlay();
-    CustomOverlay.prototype.initialize = function(map) {
-        var div = this._div = baidu.dom.create('div', {style: 'border:solid 1px #ccc;width:auto;min-width:50px;text-align:center;position:absolute;background:#fff;color:#000;font-size:12px;border-radius: 10px;padding:5px;white-space: nowrap;'});
-        div.innerHTML = this._html;
-        map.getPanes().floatPane.appendChild(div);
-        this._map = map;
-        return div;
-    }
-    CustomOverlay.prototype.draw = function() {
-        this.setPosition(this.lushuMain._marker.getPosition(), this.lushuMain._marker.getIcon().size);
-    }
-    baidu.object.extend(CustomOverlay.prototype, {
-        setPosition: function(poi,markerSize) {
-            var px = this._map.pointToOverlayPixel(poi),
-                styleW = baidu.dom.getStyle(this._div, 'width'),
-                styleH = baidu.dom.getStyle(this._div, 'height');
-                overlayW = parseInt(this._div.clientWidth || styleW, 10),
-                overlayH = parseInt(this._div.clientHeight || styleH, 10);
-            this._div.style.left = px.x - overlayW / 2 + 'px';
-            this._div.style.bottom = -(px.y - markerSize.height) + 'px';
-        },
-        setHtml: function(html) {
-            this._div.innerHTML = html;
-        },
-        setRelatedClass: function(lushuMain) {
-            this.lushuMain = lushuMain;
+
+    function initCustomOverlay() {
+        CustomOverlay.prototype = new BMap.Overlay();
+        CustomOverlay.prototype.initialize = function(map) {
+            var div = this._div = baidu.dom.create('div', {style: 'border:solid 1px #ccc;width:auto;min-width:50px;text-align:center;position:absolute;background:#fff;color:#000;font-size:12px;border-radius: 10px;padding:5px;white-space: nowrap;'});
+            div.innerHTML = this._html;
+            map.getPanes().floatPane.appendChild(div);
+            this._map = map;
+            return div;
         }
-    });
+        CustomOverlay.prototype.draw = function() {
+            this.setPosition(this.lushuMain._marker.getPosition(), this.lushuMain._marker.getIcon().size);
+        }
+        baidu.object.extend(CustomOverlay.prototype, {
+            setPosition: function(poi,markerSize) {
+                var px = this._map.pointToOverlayPixel(poi),
+                    styleW = baidu.dom.getStyle(this._div, 'width'),
+                    styleH = baidu.dom.getStyle(this._div, 'height');
+                    overlayW = parseInt(this._div.clientWidth || styleW, 10),
+                    overlayH = parseInt(this._div.clientHeight || styleH, 10);
+                this._div.style.left = px.x - overlayW / 2 + 'px';
+                this._div.style.bottom = -(px.y - markerSize.height) + 'px';
+            },
+            setHtml: function(html) {
+                this._div.innerHTML = html;
+            },
+            setRelatedClass: function(lushuMain) {
+                this.lushuMain = lushuMain;
+            }
+        });
+    }
+
     return LuShu
 });
