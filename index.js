@@ -355,7 +355,7 @@
             setPosition: function(poi,markerSize) {
                 var px = this._map.pointToOverlayPixel(poi),
                     styleW = baidu.dom.getStyle(this._div, 'width'),
-                    styleH = baidu.dom.getStyle(this._div, 'height');
+                    styleH = baidu.dom.getStyle(this._div, 'height'),
                     overlayW = parseInt(this._div.clientWidth || styleW, 10),
                     overlayH = parseInt(this._div.clientHeight || styleH, 10);
                 this._div.style.left = px.x - overlayW / 2 + 'px';
