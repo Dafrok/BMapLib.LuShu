@@ -223,6 +223,11 @@
     LuShu.prototype.showInfoWindow = function() {
         this._overlay._div.style.visibility = 'visible';
     };
+    LuShu.prototype.dispose = function () {
+        this._map.removeOverlay(this._overlay);
+        this._map.removeOverlay(this._marker);
+        clearInterval(this._intervalFlag)
+    };
     baidu.object.extend(LuShu.prototype, {
         _addMarker: function(callback) {
             if (this._marker) {
