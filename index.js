@@ -190,6 +190,7 @@
     LuShu.prototype.start = function() {
         var me = this,
             len = me._path.length;
+        this._opts.onstart && this._opts.onstart(me)
         if (me.i && me.i < len - 1) {
             if (!me._fromPause) {
                 return;
@@ -214,11 +215,13 @@
         for (var i = 0, t = this._opts.landmarkPois, len = t.length; i < len; i++) {
             t[i].bShow = false;
         }
+        this._opts.onstop && this._opts.onstop(this)
     };
     LuShu.prototype.pause = function() {
         clearInterval(this._intervalFlag);
         this._fromPause = true;
         this._clearTimeout();
+        this._opts.onpause && this._opts.onpause(this)
     };
     LuShu.prototype.hideInfoWindow = function() {
         this._opts.showInfoWindow = false;
@@ -229,9 +232,12 @@
         this._overlay && (this._overlay._div.style.visibility = 'visible');
     };
     LuShu.prototype.dispose = function () {
-        clearInterval(this._clearTimeout);
-        this._map.removeOverlay(this._overlay);
-        this._map.removeOverlay(this._marker);
+        clearInterval(this._intervalFlag);
+        this._setTimeoutQuene && this._clearTimeout();
+        if (this._map) {
+            this._map.removeOverlay(this._overlay);
+            this._map.removeOverlay(this._marker);
+        }
     };
     baidu.object.extend(LuShu.prototype, {
         _addMarker: function(callback) {
@@ -292,7 +298,7 @@
                             proPos = me._path[me.i - 1];
                         }
                         if(me._opts.enableRotation == true){
-                                me.setRotation(proPos,initPos,targetPos);
+                            me.setRotation(proPos,initPos,targetPos);
                         }
                         if(me._opts.autoView){
                             if(!me._map.getBounds().containsPoint(pos)){
@@ -347,6 +353,8 @@
             var me = this;
             if (index < this._path.length - 1) {
                 me._move(me._path[index], me._path[index + 1], me._tween.linear);
+            } else {
+                me.stop()
             }
         },
         _setInfoWin: function(pos) {
