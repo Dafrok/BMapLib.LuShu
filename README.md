@@ -22,10 +22,10 @@ $ npm i --save bmaplib.lushu
 import LuShu from 'bmaplib.lushu'
 
 // You should use this lib after BaiduMap loaded. For Example:
-//
-// loadBaiduMap.then(() => {
-//   new LuShu()
-// })
+
+loadBaiduMap.then(() => {
+  new LuShu()
+})
 ```
 
 ### CDN
