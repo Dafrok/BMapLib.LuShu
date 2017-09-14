@@ -167,9 +167,12 @@
         this._opts = {
             icon: null,
             speed: 4000,
-            defaultContent: ''
+            defaultContent: '',
+            showInfoWindow: false
         };
         this._setOptions(opts);
+        this._rotation = 0;
+
         if (!this._opts.icon instanceof BMap.Icon) {
             this._opts.icon = defaultIcon;
         }
@@ -218,15 +221,17 @@
         this._clearTimeout();
     };
     LuShu.prototype.hideInfoWindow = function() {
-        this._overlay._div.style.visibility = 'hidden';
+        this._opts.showInfoWindow = false;
+        this._overlay && (this._overlay._div.style.visibility = 'hidden');
     };
     LuShu.prototype.showInfoWindow = function() {
-        this._overlay._div.style.visibility = 'visible';
+        this._opts.showInfoWindow = true;
+        this._overlay && (this._overlay._div.style.visibility = 'visible');
     };
     LuShu.prototype.dispose = function () {
+        clearInterval(this._clearTimeout);
         this._map.removeOverlay(this._overlay);
         this._map.removeOverlay(this._marker);
-        clearInterval(this._intervalFlag)
     };
     baidu.object.extend(LuShu.prototype, {
         _addMarker: function(callback) {
@@ -249,6 +254,7 @@
             overlay.setRelatedClass(this);
             this._overlay = overlay;
             this._map.addOverlay(overlay);
+            this._opts.showInfoWindow ? this.showInfoWindow() : this.hideInfoWindow()
         },
         _getMercator: function(poi) {
             return this._map.getMapType().getProjection().lngLatToPoint(poi);
@@ -261,30 +267,81 @@
                 currentCount = 0,
                 timer = 10,
                 step = this._opts.speed / (1000 / timer),
-                initPos = this._projection.lngLatToPoint(initPos),
-                targetPos = this._projection.lngLatToPoint(targetPos),
-                count = Math.round(me._getDistance(initPos, targetPos) / step);
-
+                init_pos = this._projection.lngLatToPoint(initPos),
+                target_pos = this._projection.lngLatToPoint(targetPos),
+                count = Math.round(me._getDistance(init_pos, target_pos) / step);
             if (count < 1) {
                 me._moveNext(++me.i);
                 return;
             }
             me._intervalFlag = setInterval(function() {
-                if (currentCount >= count) {
-                    clearInterval(me._intervalFlag);
-                    if(me.i > me._path.length) {
-                        return;
-                    }
-                    me._moveNext(++me.i);
-                } else {
+	            if (currentCount >= count) {
+	                clearInterval(me._intervalFlag);
+		        	if(me.i > me._path.length){
+						return;
+		        	}
+	                me._moveNext(++me.i);
+	            } else {
                     currentCount++;
-                    var x = effect(initPos.x, targetPos.x, currentCount, count),
-                        y = effect(initPos.y, targetPos.y, currentCount, count),
+                    var x = effect(init_pos.x, target_pos.x, currentCount, count),
+                        y = effect(init_pos.y, target_pos.y, currentCount, count),
                         pos = me._projection.pointToLngLat(new BMap.Pixel(x, y));
+                    if(currentCount == 1){
+                        var proPos = null;
+                        if(me.i - 1 >= 0){
+                            proPos = me._path[me.i - 1];
+                        }
+                        if(me._opts.enableRotation == true){
+                                me.setRotation(proPos,initPos,targetPos);
+                        }
+                        if(me._opts.autoView){
+                            if(!me._map.getBounds().containsPoint(pos)){
+                                me._map.setCenter(pos);
+                            }   
+                        }
+                    }
                     me._marker.setPosition(pos);
                     me._setInfoWin(pos);
                 }
-            },timer);
+	        },timer);
+        },
+        setRotation : function(prePos,curPos,targetPos){
+            var me = this;
+            var deg = 0;
+            //start!
+            curPos =  me._map.pointToPixel(curPos);
+            targetPos =  me._map.pointToPixel(targetPos);   
+
+            if(targetPos.x != curPos.x){
+                var tan = (targetPos.y - curPos.y)/(targetPos.x - curPos.x),
+                atan  = Math.atan(tan);
+                deg = atan*360/(2*Math.PI);
+                //degree  correction;
+                if(targetPos.x < curPos.x){
+                    deg = -deg + 90 + 90;
+
+                } else {
+                    deg = -deg;
+                }
+
+                me._marker.setRotation(-deg);   
+
+            }else {
+                var disy = targetPos.y- curPos.y ;
+                var bias = 0;
+                if(disy > 0)
+                    bias=-1
+                else
+                    bias = 1
+                me._marker.setRotation(-bias * 90);  
+            }
+            return;
+        },
+        linePixellength : function(from,to){ 
+            return Math.sqrt(Math.abs(from.x- to.x) * Math.abs(from.x- to.x) + Math.abs(from.y- to.y) * Math.abs(from.y- to.y) );
+        },
+        pointToPoint : function(from,to ){
+            return Math.abs(from.x- to.x) * Math.abs(from.x- to.x) + Math.abs(from.y- to.y) * Math.abs(from.y- to.y)
         },
         _moveNext: function(index) {
             var me = this;
