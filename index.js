@@ -200,7 +200,7 @@
         }else {
             !me._marker && me._addMarker();
             me._timeoutFlag = setTimeout(function() {
-                    me._addInfoWin();
+                    !me._overlay && me._addInfoWin();
                     me._moveNext(me.i);
             },400);
         }
